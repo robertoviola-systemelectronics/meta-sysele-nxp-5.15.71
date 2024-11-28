@@ -1,0 +1,59 @@
+name: Yocto Build
+
+on:
+  push:
+    branches:
+      - '**'  # Matches all branches
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          df -h
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          sudo apt-get install -y gawk wget git diffstat unzip texinfo gcc build-essential \
+            chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils \
+            iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
+            python3-subunit mesa-common-dev zstd liblz4-tool file locales libacl1 \
+            curl python-is-python3 bmap-tools
+          sudo locale-gen en_US.UTF-8
+
+      - name: Install repo tool
+        run: |
+          mkdir -p ~/bin
+          curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          echo "${HOME}/bin" >> $GITHUB_PATH
+
+      - name: Initialize Yocto Environment
+        run: |
+          mkdir yocto-astrial
+          cd yocto-astrial
+          repo init -u https://github.com/nxp-imx/imx-manifest -b imx-linux-kirkstone -m imx-5.15.71-2.2.0.xml
+          mkdir -p .repo/local_manifests
+          wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
+          repo sync
+
+      - name: Build Image
+        run: |
+          cd yocto-astrial
+          source astrial-setup-env -b build
+          bitbake system-astrial-image
+
+      - name: Archive Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: yocto-build
+          path: |
+            yocto-astrial/build/tmp/deploy/images/astrial-imx8mp/imx-boot-astrial-imx8mp-sd.bin-flash_evk
+            yocto-astrial/build/tmp/deploy/images/astrial-imx8mp/system-astrial-image-astrial-imx8mp-*.rootfs.wic.zst
