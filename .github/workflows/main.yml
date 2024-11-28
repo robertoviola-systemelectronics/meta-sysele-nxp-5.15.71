@@ -20,6 +20,14 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
 
+      - name: Prepare Build Directories
+        run: |
+          sudo mkdir -p /mnt/downloads
+          sudo mkdir -p /mnt/sstate-cache
+          sudo chmod 777 /mnt/downloads
+          sudo chmod 777 /mnt/sstate-cache
+          df -h
+
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -30,8 +38,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            yocto-astrial/build/sstate-cache
-            yocto-astrial/build/downloads
+            /mnt/sstate-cache
+            /mnt/downloads
           key: yocto-cache-${{ github.ref }}-${{ github.sha }}
           restore-keys: |
             yocto-cache-${{ github.ref }}-
@@ -63,12 +71,16 @@ jobs:
           wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
           repo sync
           source astrial-setup-env -b build
-          # Configurazione dopo l'inizializzazione dell'ambiente
-          echo 'SSTATE_DIR = "${TOPDIR}/sstate-cache"' >> conf/local.conf
-          echo 'DL_DIR = "${TOPDIR}/downloads"' >> conf/local.conf
+          # Configurazione per utilizzare /mnt per cache e downloads
+          echo 'SSTATE_DIR = "/mnt/sstate-cache"' >> conf/local.conf
+          echo 'DL_DIR = "/mnt/downloads"' >> conf/local.conf
           echo 'INHERIT += "rm_work"' >> conf/local.conf
           echo 'INHERIT += "ccache"' >> conf/local.conf
           echo 'CCACHE_TOP_DIR = "${TOPDIR}/.ccache"' >> conf/local.conf
+          # Configurazione per pulizia aggressiva
+          echo 'INHERIT += "buildhistory"' >> conf/local.conf
+          echo 'BUILDHISTORY_COMMIT = "0"' >> conf/local.conf
+          echo 'RM_WORK_EXCLUDE = ""' >> conf/local.conf
 
       - name: Build Image
         run: |
