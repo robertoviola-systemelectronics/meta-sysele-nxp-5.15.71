@@ -23,7 +23,7 @@ jobs:
 
       - name: Setup Persistent Cache Directories
         run: |
-          # Create persistent directories for all types of cache
+          #  Create persistent directories for all types of cache
           sudo mkdir -p /mnt/yocto-persistent/downloads
           sudo mkdir -p /mnt/yocto-persistent/sstate-cache
           sudo mkdir -p /mnt/yocto-persistent/tmp
