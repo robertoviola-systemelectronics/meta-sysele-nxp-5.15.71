@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - '**'
+
 jobs:
   build:
     runs-on: self-hosted
@@ -20,30 +21,27 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
 
-      - name: Prepare Build Directories
+      - name: Setup Persistent Cache Directories
         run: |
-          sudo mkdir -p /mnt/downloads
-          sudo mkdir -p /mnt/sstate-cache
-          sudo chmod 777 /mnt/downloads
-          sudo chmod 777 /mnt/sstate-cache
+          # Create persistent directories for all types of cache
+          sudo mkdir -p /mnt/yocto-persistent/downloads
+          sudo mkdir -p /mnt/yocto-persistent/sstate-cache
+          sudo mkdir -p /mnt/yocto-persistent/tmp
+          sudo mkdir -p /mnt/yocto-persistent/ccache
+          
+          # Set appropriate permissions
+          sudo chmod -R 777 /mnt/yocto-persistent
+          
+          # Create symlinks if needed
+          ln -sf /mnt/yocto-persistent/ccache $HOME/.ccache
+          
           df -h
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: yocto-build-${{ github.ref }}
-          max-size: 2G
-
-      - name: Setup Yocto cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            /mnt/sstate-cache
-            /mnt/downloads
-          key: yocto-cache-${{ github.ref }}-${{ github.sha }}
-          restore-keys: |
-            yocto-cache-${{ github.ref }}-
-            yocto-cache-
+          path: /mnt/yocto-persistent/ccache
 
       - name: Install Dependencies
         run: |
@@ -71,16 +69,35 @@ jobs:
           wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
           repo sync
           source astrial-setup-env -b build
-          # Configurazione per utilizzare /mnt per cache e downloads
-          echo 'SSTATE_DIR = "/mnt/sstate-cache"' >> conf/local.conf
-          echo 'DL_DIR = "/mnt/downloads"' >> conf/local.conf
-          echo 'INHERIT += "rm_work"' >> conf/local.conf
-          echo 'INHERIT += "ccache"' >> conf/local.conf
-          echo 'CCACHE_TOP_DIR = "${TOPDIR}/.ccache"' >> conf/local.conf
-          # Configurazione per pulizia aggressiva
-          echo 'INHERIT += "buildhistory"' >> conf/local.conf
-          echo 'BUILDHISTORY_COMMIT = "0"' >> conf/local.conf
-          echo 'RM_WORK_EXCLUDE = ""' >> conf/local.conf
+          
+          # Cache configuration
+          cat >> conf/local.conf << EOF
+          # Cache directories configuration
+          SSTATE_DIR = "/mnt/yocto-persistent/sstate-cache"
+          DL_DIR = "/mnt/yocto-persistent/downloads"
+          TMPDIR = "/mnt/yocto-persistent/tmp"
+          
+          # CCache configuration
+          INHERIT += "ccache"
+          CCACHE_TOP_DIR = "/mnt/yocto-persistent/ccache"
+          CCACHE_DIR = "/mnt/yocto-persistent/ccache"
+          
+          # Performance optimizations
+          BB_NUMBER_THREADS = "\${@oe.utils.cpu_count()}"
+          PARALLEL_MAKE = "-j \${@oe.utils.cpu_count()}"
+          
+          # Work directory cleanup
+          INHERIT += "rm_work"
+          RM_WORK_EXCLUDE = ""
+          
+          # Build history (optional, for debugging)
+          INHERIT += "buildhistory"
+          BUILDHISTORY_COMMIT = "0"
+          
+          # Additional cache optimizations
+          BB_HASHSERVE_UPSTREAM = "hashserv.yocto.io:8687"
+          SSTATE_MIRRORS ?= "file://.* http://sstate.yoctoproject.org/all/PATH;downloadfilename=PATH"
+          EOF
 
       - name: Build Image
         run: |
