@@ -1,14 +1,17 @@
 name: Yocto Build
-
 on:
   push:
     branches:
       - '**'  # Matches all branches
-
 jobs:
   build:
     runs-on: self-hosted
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git information
+          
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -36,10 +39,30 @@ jobs:
           wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
           repo sync
 
+      - name: Copy Custom Layer Files
+        run: |
+          # Assuming your meta-layer is in the repository
+          # Adjust the paths according to your repository structure
+          cp -r meta-layer/* yocto-astrial/sources/meta-your-layer/
+
+      - name: Generate Build Signature
+        run: |
+          # Generate build signature using GitHub secret
+          if [ "${{ secrets.BUILD_SIGNING_KEY }}" != "" ]; then
+            # Create a unique signature combining various elements
+            SIGNATURE_INPUT="${GITHUB_SHA}|${GITHUB_REPOSITORY}|${GITHUB_RUN_ID}|${{ secrets.BUILD_SIGNING_KEY }}"
+            BUILD_SIGNATURE=$(echo -n "$SIGNATURE_INPUT" | openssl dgst -sha256 -hmac "${{ secrets.BUILD_SIGNING_KEY }}" -hex | cut -d' ' -f2)
+          else
+            BUILD_SIGNATURE="unofficial"
+          fi
+          echo "BUILD_SIGNATURE=${BUILD_SIGNATURE}" >> $GITHUB_ENV
+          
       - name: Build Image
         run: |
           cd yocto-astrial
           source astrial-setup-env -b build
+          # Pass the signature to bitbake
+          export BB_ENV_PASSTHROUGH_ADDITIONS="GITHUB_SHA GITHUB_REPOSITORY GITHUB_RUN_ID BUILD_SIGNATURE"
           bitbake system-astrial-image
 
       - name: Archive Build Artifacts
