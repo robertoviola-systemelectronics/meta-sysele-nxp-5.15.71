@@ -7,16 +7,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     steps:
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache
-          df -h
-
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -37,7 +29,7 @@ jobs:
 
       - name: Initialize Yocto Environment
         run: |
-          mkdir yocto-astrial
+          mkdir -p yocto-astrial
           cd yocto-astrial
           repo init -u https://github.com/nxp-imx/imx-manifest -b imx-linux-kirkstone -m imx-5.15.71-2.2.0.xml
           mkdir -p .repo/local_manifests
@@ -51,7 +43,7 @@ jobs:
           bitbake system-astrial-image
 
       - name: Archive Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: yocto-build
           path: |
