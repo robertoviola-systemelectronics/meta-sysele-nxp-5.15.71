@@ -44,6 +44,10 @@ jobs:
       
           # Modify only the "meta-sysele-nxp-5.15.71" project to use "system-local"
           sed -i 's|<project name="meta-sysele-nxp-5.15.71" remote="system"|<project name="meta-sysele-nxp-5.15.71" remote="system-local"|g' .repo/local_manifests/astrial-5.15.71.xml
+
+          # Output the modified XML file for debugging
+          echo "Modified XML content:"
+          cat .repo/local_manifests/astrial-5.15.71.xml          
           repo sync
 
       - name: Generate Build Signature
