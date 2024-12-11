@@ -36,8 +36,12 @@ jobs:
           wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
           CURRENT_REPO="https://github.com/${GITHUB_REPOSITORY}"
           CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
+          
+          # Replace only the base URL while preserving project paths
           sed -i "s|https://github.com/System-Electronics|${CURRENT_REPO}|g" .repo/local_manifests/astrial-5.15.71.xml
-          sed -i "s|revision=\"main\"|revision=\"${CURRENT_BRANCH}\"|g" .repo/local_manifests/astrial-5.15.71.xml
+
+          # Update branch only for the relevant projects
+          sed -i "/meta-sysele-nxp-5.15.71/s|revision=\"main\"|revision=\"${CURRENT_BRANCH}\"|" .repo/local_manifests/astrial-5.15.71.xml
           repo sync
 
       - name: Generate Build Signature
