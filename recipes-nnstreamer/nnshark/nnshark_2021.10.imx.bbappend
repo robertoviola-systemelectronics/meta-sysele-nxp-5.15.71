@@ -1,9 +1,5 @@
-SRC_URI = " \
-    git://github.com/nxp-imx/nnshark.git;protocol=https;branch=2021.10.imx;name=nnshark \
-    git://github.com/GStreamer/common.git;protocol=https;name=common;destsuffix=git/common;nobranch=1 \
-"
+NNSHARK_SRC ?= "https://github.com/robertoviola-systemelectronics/nnshark.git;protocol=https"
+SRCBRANCH ?= "2021.10.imx"
+SRC_URI = "${NNSHARK_SRC};branch=${SRCBRANCH}"
 
-# Definiamo esplicitamente le SRCREV
-SRCREV_nnshark = "${AUTOREV}"
-SRCREV_common = "${AUTOREV}"
-SRCREV_FORMAT = "nnshark_common"
+SRCREV = "b57b06ac69f1712e8df3e047221f5640394b2e6f"
