@@ -34,14 +34,22 @@ jobs:
           repo init -u https://github.com/nxp-imx/imx-manifest -b imx-linux-kirkstone -m imx-5.15.71-2.2.0.xml
           mkdir -p .repo/local_manifests
           wget --directory-prefix .repo/local_manifests https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml
-          CURRENT_REPO="https://github.com/${GITHUB_REPOSITORY}"
-          CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
-
-          # Replace only the URL for projects with remote="system"
-          sed -i '/remote="system"/s|https://github.com/System-Electronics|'"${CURRENT_REPO}"'|g' .repo/local_manifests/astrial-5.15.71.xml
-
-          # Replace the revision only for the `meta-sysele-nxp-5.15.71` project
-          sed -i '/name="meta-sysele-nxp-5.15.71"/s|revision="[^"]*"|revision="'"${CURRENT_BRANCH}"'"|' .repo/local_manifests/astrial-5.15.71.xml
+          # Get the current repository and branch
+          CURRENT_REPO="${{ github.repository }}"
+          CURRENT_BRANCH="${{ github.ref_name }}"
+      
+          # Download the original manifest file
+          MANIFEST_URL="https://raw.githubusercontent.com/System-Electronics/meta-sysele-nxp-5.15.71/main/manifest/astrial-5.15.71.xml"
+          curl -s "$MANIFEST_URL" > astrial-5.15.71.xml
+      
+          # Update the remote fetch URL and branch revision
+          sed -i \
+            -e "s|fetch=\"https://github.com/System-Electronics\"|fetch=\"https://github.com/$CURRENT_REPO\"|" \
+            -e "s|revision=\"main\"|revision=\"$CURRENT_BRANCH\"|" \
+            astrial-5.15.71.xml
+      
+          # Display the updated manifest file
+          cat astrial-5.15.71.xml
           repo sync
 
       - name: Generate Build Signature
