@@ -54,8 +54,6 @@ jobs:
           source astrial-setup-env -b build
            # Pass the signature to bitbake
           export BB_ENV_PASSTHROUGH_ADDITIONS="GITHUB_SHA GITHUB_REPOSITORY GITHUB_RUN_ID BUILD_SIGNATURE"
-          bitbake -c cleanall nnshark
-          bitbake nnshark
           bitbake system-astrial-image
 
       - name: Archive Build Artifacts
