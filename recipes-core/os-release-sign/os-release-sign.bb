@@ -24,7 +24,7 @@ python do_install() {
     from datetime import datetime
     
     # Create installation directory
-    target_dir = d.getVar('D') + "/opt/systele"
+    target_dir = d.getVar('D') + "/opt/sysele"
     os.makedirs(target_dir, exist_ok=True)
     
     # Collect all build information
@@ -62,4 +62,4 @@ python do_install() {
 }
 
 # Define files to be included in the package
-FILES:${PN} += "/opt/systele/os-release.yaml /opt/systele/verify_build.py"
+FILES:${PN} += "/opt/sysele/os-release.yaml /opt/sysele/verify_build.py"
