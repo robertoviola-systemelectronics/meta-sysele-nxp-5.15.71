@@ -36,6 +36,6 @@ IMAGE_INSTALL:append = " python3-pyrealsense2"
 
 #################################################################################################################
 ## GitHub.com Signing
-IMAGE_INSTALL:append = " os-release-sign "
+IMAGE_INSTALL:append = " os-release-sign python3-pyyaml "
 
 #################################################################################################################
