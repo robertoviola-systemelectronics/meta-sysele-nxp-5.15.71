@@ -54,6 +54,7 @@ jobs:
           source astrial-setup-env -b build
            # Pass the signature to bitbake
           export BB_ENV_PASSTHROUGH_ADDITIONS="GITHUB_SHA GITHUB_REPOSITORY GITHUB_RUN_ID BUILD_SIGNATURE"
+          echo 'BB_NETWORK_ISOLATION_ENABLED = "0"' >> conf/local.conf          
           bitbake system-astrial-image
 
       - name: Archive Build Artifacts
