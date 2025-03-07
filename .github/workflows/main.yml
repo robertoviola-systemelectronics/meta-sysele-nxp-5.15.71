@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-large-runner
     steps:
       - name: Install Dependencies
         run: |
